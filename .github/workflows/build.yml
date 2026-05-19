@@ -75,6 +75,3 @@ jobs:
         with:
           name: iphonesimulator-app
           path: build/Build/Products/Debug-iphonesimulator/*
-
-
-

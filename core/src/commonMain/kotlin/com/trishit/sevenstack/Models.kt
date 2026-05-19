@@ -13,7 +13,9 @@ data class UserDto(
 data class DayDto(
     val id: String,
     val userId: String,
-    val date: String
+    val date: String,
+    val tasks: List<TaskDto> = emptyList(),
+    val notes: List<NoteDto> = emptyList()
 )
 
 @Serializable
