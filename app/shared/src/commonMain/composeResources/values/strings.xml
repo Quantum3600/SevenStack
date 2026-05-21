@@ -1,0 +1,16 @@
+<resources>
+    <string name="monday">MONDAY</string>
+    <string name="tuesday">TUESDAY</string>
+    <string name="wednesday">WEDNESDAY</string>
+    <string name="thursday">THURSDAY</string>
+    <string name="friday">FRIDAY</string>
+    <string name="saturday">SATURDAY</string>
+    <string name="sunday">SUNDAY</string>
+    <string name="task_date_placeholder">April, 14 2025 – 9:41am</string>
+    <string name="task_1">5km run</string>
+    <string name="task_2">Read 10 pages</string>
+    <string name="task_3">Walk the dog</string>
+    <string name="task_4">Get groceries</string>
+    <string name="task_5">Design a to-do app (?)</string>
+    <string name="add_task_placeholder">Add a new task…</string>
+</resources>

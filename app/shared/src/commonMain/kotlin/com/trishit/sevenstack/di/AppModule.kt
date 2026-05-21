@@ -11,7 +11,7 @@ import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
-val AppModule = module {
+val appModule = module {
     single { getRoomDatabase(factory = get()) }
     single { get<SevenStackDatabase>().appDao() }
     single { AppRepository(dao = get()) }

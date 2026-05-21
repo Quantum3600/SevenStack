@@ -5,7 +5,9 @@ import org.koin.compose.KoinContext
 import androidx.compose.material3.Text
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.navigator.Navigator
+import cafe.adriel.voyager.transitions.SlideTransition
 import com.trishit.sevenstack.ui.SevenStackTheme
+import com.trishit.sevenstack.ui.screens.HomeScreen
 import com.trishit.sevenstack.ui.viewmodel.SettingsViewModel
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -19,7 +21,9 @@ fun App() {
             colorPalette = settingsState.palette,
             appFont = settingsState.font
         ) {
-            Navigator(screen = HomeScreen())
+            Navigator(screen = HomeScreen()) { navigator ->
+                SlideTransition(navigator)
+            }
         }
     }
 }

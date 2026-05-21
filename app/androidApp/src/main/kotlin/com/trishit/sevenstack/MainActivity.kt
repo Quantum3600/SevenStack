@@ -1,4 +1,4 @@
-package com.trishit.sevenstack
+    package com.trishit.sevenstack
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity

@@ -39,6 +39,8 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.koin.android)
+            implementation(libs.koin.core)
+
         }
         commonMain.dependencies {
             api(projects.core)
@@ -52,6 +54,7 @@ kotlin {
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.androidx.sqlite.bundled)
             implementation(libs.voyager.navigator)
+            implementation(libs.voyager.transitions)
             implementation(libs.room.runtime)
             implementation(project.dependencies.platform(libs.koin.bom))
             implementation(libs.koin.core)
