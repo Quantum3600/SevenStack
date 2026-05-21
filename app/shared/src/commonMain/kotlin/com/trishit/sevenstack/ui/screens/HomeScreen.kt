@@ -1,15 +1,16 @@
 package com.trishit.sevenstack.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LoadingIndicator
@@ -24,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
@@ -37,6 +39,18 @@ import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.viewmodel.koinViewModel
 import sevenstack.app.shared.generated.resources.Res
 import sevenstack.app.shared.generated.resources.gear_svgrepo_com
+import androidx.compose.ui.tooling.preview.Preview
+import com.trishit.sevenstack.DayDto
+import com.trishit.sevenstack.NoteDto
+import com.trishit.sevenstack.TaskDto
+import com.trishit.sevenstack.ui.SevenStackTheme
+import com.trishit.sevenstack.ui.models.AppFont
+import com.trishit.sevenstack.ui.models.ColorPalette
+import com.trishit.sevenstack.ui.viewmodel.AppUiState
+import com.trishit.sevenstack.ui.viewmodel.SettingsUiState
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 
 
 class HomeScreen : Screen {
@@ -46,67 +60,155 @@ class HomeScreen : Screen {
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
         val settingsViewModel = koinViewModel<SettingsViewModel>()
         val settingsState by settingsViewModel.uiState.collectAsStateWithLifecycle()
-        var expandedDayId by remember { mutableStateOf<String?>(null) }
+        val navigator = LocalNavigator.currentOrThrow
 
-        val isDark = when (settingsState.theme) {
-            AppTheme.SYSTEM -> isSystemInDarkTheme()
-            AppTheme.DARK -> true
-            AppTheme.LIGHT -> false
-        }
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
-        ) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                if (uiState.isLoading) {
-                    LoadingIndicator(
-                        modifier = Modifier.align(Alignment.Center),
-                        polygons = LoadingIndicatorDefaults.IndeterminateIndicatorPolygons
-                    )
-                } else {
-                    LazyColumn(Modifier.fillMaxSize()) {
-                        itemsIndexed(uiState.days) { idx, day ->
-                            DaySection(
-                                day = day,
-                                index = idx,
-                                isExpanded = expandedDayId == day.id,
-                                isDark = isDark,
-                                selectedFont = settingsState.font,
-                                selectedPalette = settingsState.palette,
-                                onExpandClick = {
-                                    expandedDayId = if (expandedDayId == day.id) null else day.id
-                                },
-                                onTaskToggled = { taskId, isCompleted ->
-                                    viewModel.onTaskToggled(taskId, isCompleted)
-                                },
-                                onAddTaskClicked = { title ->
-                                    viewModel.onAddTask(day.id, title)
-                                },
-                                onSaveNoteClicked = { rawText ->
-                                    viewModel.onSaveNote(day.id, rawText)
-                                }
-                            )
-                        }
+        HomeScreenContent(
+            uiState = uiState,
+            settingsState = settingsState,
+            onTaskToggled = { taskId, isCompleted ->
+                viewModel.onTaskToggled(taskId, isCompleted)
+            },
+            onAddTask = { dayId, title ->
+                viewModel.onAddTask(dayId, title)
+            },
+            onSaveNote = { dayId, rawText ->
+                viewModel.onSaveNote(dayId, rawText)
+            },
+            onSettingsClick = { navigator.push(SettingsScreen()) }
+        )
+    }
+}
+
+@Composable
+fun HomeScreenContent(
+    uiState: AppUiState,
+    settingsState: SettingsUiState,
+    onTaskToggled: (String, Boolean) -> Unit,
+    onAddTask: (String, String) -> Unit,
+    onSaveNote: (String, String) -> Unit,
+    onSettingsClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val isDark = when (settingsState.theme) {
+        AppTheme.SYSTEM -> isSystemInDarkTheme()
+        AppTheme.DARK -> true
+        AppTheme.LIGHT -> false
+    }
+
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val backgroundColor = remember(primaryColor, isDark) {
+        val base = if (isDark) Color(0xFF1C1C1E) else Color(0xFFF5F5F7)
+        primaryColor.copy(alpha = 0.05f).compositeOver(base)
+    }
+
+    val today = remember {
+        Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+    }
+    var expandedDayId by remember(uiState.days) {
+        mutableStateOf(uiState.days.find { it.date == today }?.id)
+    }
+
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = backgroundColor
+    ) {
+        BoxWithConstraints(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
+            val screenHeight = maxHeight
+            val baseItemHeight = screenHeight / 7f
+
+            if (uiState.isLoading) {
+                LoadingIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    polygons = LoadingIndicatorDefaults.IndeterminateIndicatorPolygons
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 0.dp),
+                    userScrollEnabled = true
+                ) {
+                    itemsIndexed(uiState.days, key = { _, day -> day.id }) { idx, day ->
+                        DaySection(
+                            day = day,
+                            index = idx,
+                            isExpanded = expandedDayId == day.id,
+                            isDark = isDark,
+                            selectedFont = settingsState.font,
+                            baseHeight = baseItemHeight,
+                            onExpandClick = {
+                                expandedDayId = if (expandedDayId == day.id) null else day.id
+                            },
+                            onTaskToggled = onTaskToggled,
+                            onAddTaskClicked = { title -> onAddTask(day.id, title) },
+                            onSaveNoteClicked = { rawText -> onSaveNote(day.id, rawText) }
+                        )
                     }
                 }
-                val navigator = LocalNavigator.currentOrThrow
-                IconButton(
-                    onClick = { navigator.push(SettingsScreen()) },
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 32.dp)
-                        .size(56.dp)
-                        .background(Color.Transparent)
-                ) {
-                    Icon(
-                        painter = painterResource(Res.drawable.gear_svgrepo_com),
-                        contentDescription = "Settings",
-                        modifier = Modifier.size(28.dp),
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
-                }
+            }
+            IconButton(
+                onClick = onSettingsClick,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 16.dp)
+                    .size(40.dp)
+                    .background(Color.Transparent)
+            ) {
+                Icon(
+                    painter = painterResource(Res.drawable.gear_svgrepo_com),
+                    contentDescription = "Settings",
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                )
             }
         }
     }
 }
 
+@Preview
+@Composable
+fun HomeScreenPreview() {
+    val fakeDays = listOf(
+        DayDto(
+            id = "1",
+            userId = "user1",
+            date = "2023-10-27",
+            tasks = listOf(
+                TaskDto("1", "1", "Finish the project", true),
+                TaskDto("2", "1", "Write documentation", false)
+            ),
+            notes = listOf(
+                NoteDto("1", "1", "Need to call the client")
+            )
+        ),
+        DayDto(
+            id = "2",
+            userId = "user1",
+            date = "2023-10-28",
+            tasks = listOf(
+                TaskDto("3", "2", "Buy groceries", false)
+            )
+        )
+    )
+
+    val uiState = AppUiState(days = fakeDays, isLoading = false)
+    val settingsState = SettingsUiState(
+        theme = AppTheme.LIGHT,
+        palette = ColorPalette.MONOCHROME,
+        font = AppFont.SYSTEM
+    )
+
+    SevenStackTheme(
+        appTheme = settingsState.theme,
+        colorPalette = settingsState.palette,
+        appFont = settingsState.font
+    ) {
+        HomeScreenContent(
+            uiState = uiState,
+            settingsState = settingsState,
+            onTaskToggled = { _, _ -> },
+            onAddTask = { _, _ -> },
+            onSaveNote = { _, _ -> },
+            onSettingsClick = {}
+        )
+    }
+}

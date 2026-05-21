@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
 data class SettingsUiState(
     val theme: AppTheme = AppTheme.SYSTEM,
     val palette: ColorPalette = ColorPalette.MONOCHROME,
-    val font: AppFont = AppFont.OI
+    var font: AppFont = AppFont.OI
 )
 
 class SettingsViewModel(private val repository: SettingsRepository) : ViewModel() {

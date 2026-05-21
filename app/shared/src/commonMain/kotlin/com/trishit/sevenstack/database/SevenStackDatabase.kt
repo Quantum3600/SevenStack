@@ -1,5 +1,6 @@
 package com.trishit.sevenstack.database
 
+import androidx.room.ConstructedBy
 import androidx.room.Dao
 import androidx.room.Database
 import androidx.room.Entity
@@ -7,6 +8,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.RoomDatabase
+import androidx.room.RoomDatabaseConstructor
 import androidx.room.Transaction
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import kotlinx.coroutines.IO
@@ -14,8 +16,14 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AppDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertDays(days: List<DayEntity>)
+
+    @Query("DELETE FROM days")
+    suspend fun deleteAllDays()
+
     @Transaction
-    @Query("SELECT * FROM days ORDER BY date ASC")
+    @Query("SELECT * FROM days ORDER BY id ASC")
     fun observeAllDays(): Flow<List<DayWithContent>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -41,6 +49,7 @@ interface AppDao {
     entities = [DayEntity::class, TaskEntity::class, NoteEntity::class],
     version = 1
 )
+@ConstructedBy(SevenStackDatabaseConstructor::class)
 abstract class SevenStackDatabase: RoomDatabase() {
     abstract fun appDao(): AppDao
 }

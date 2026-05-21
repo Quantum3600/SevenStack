@@ -9,8 +9,8 @@ import androidx.compose.ui.unit.sp
 import com.trishit.sevenstack.ui.models.AppFont
 
 @Composable
-fun getTypography(appFont: AppFont): Typography {
-    val fontFamily = when (appFont) {
+fun getFontFamily(appFont: AppFont): FontFamily {
+    return when (appFont) {
         AppFont.SYSTEM -> FontFamily.Default
         AppFont.BITCOUNT -> AppFonts.bitCount()
         AppFont.BOLDONSE -> AppFonts.boldonse()
@@ -26,6 +26,11 @@ fun getTypography(appFont: AppFont): Typography {
         AppFont.WORKBENCH -> AppFonts.workBench()
         AppFont.ZEN_DOTS -> AppFonts.zenDots()
     }
+}
+
+@Composable
+fun getTypography(appFont: AppFont): Typography {
+    val fontFamily = getFontFamily(appFont)
 
     return Typography(
         displayLarge = TextStyle(

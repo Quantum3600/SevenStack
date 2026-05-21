@@ -24,6 +24,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Card
@@ -43,20 +45,26 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter.Companion.tint
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.graphics.shapes.RoundedPolygon
-import androidx.room.Index
 import com.trishit.sevenstack.DayDto
 import com.trishit.sevenstack.ui.getTypography
 import com.trishit.sevenstack.ui.models.AppFont
-import com.trishit.sevenstack.ui.models.ColorPalette
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.painterResource
 import sevenstack.app.shared.generated.resources.Res
 import sevenstack.app.shared.generated.resources.rounded_event_list_24
 import sevenstack.app.shared.generated.resources.rounded_stylus_note_24
+import kotlin.time.Clock
 
 private enum class DayViewMode { TASKS, NOTES }
 
@@ -67,43 +75,48 @@ fun DaySection(
     isExpanded: Boolean,
     isDark: Boolean,
     selectedFont: AppFont,
-    selectedPalette: ColorPalette,
+    baseHeight: Dp,
     onExpandClick: () -> Unit,
     onTaskToggled: (String, Boolean) -> Unit,
     onAddTaskClicked: (String) -> Unit,
     onSaveNoteClicked: (String) -> Unit
 ) {
-    val stepFactor = (index % 7) * 0.05
+    val primaryColor = MaterialTheme.colorScheme.primary
     val cardColor = remember(
-        selectedPalette,
+        primaryColor,
         isDark,
         index
     ) {
+        val alpha = (0.05f + (index % 7) * 0.05f).coerceAtMost(1f)
         if (isDark) {
-            when (selectedPalette) {
-                ColorPalette.MONOCHROME -> Color(0xFF1C1C1E).copy(alpha = (1f - stepFactor).toFloat())
-                ColorPalette.RED -> Color(0xFF3A1212).copy(alpha = (1f - stepFactor).toFloat())
-                ColorPalette.YELLOW -> Color(0xFF2D2A15).copy(alpha = (1f - stepFactor).toFloat())
-                ColorPalette.GREEN -> Color(0xFF122A1C).copy(alpha = (1f - stepFactor).toFloat())
-                ColorPalette.BLUE -> Color(0xFF121F3A).copy(alpha = (1f - stepFactor).toFloat())
-            }
+            primaryColor.copy(alpha = alpha).compositeOver(Color(0xFF1C1C1E))
         } else {
-            when (selectedPalette) {
-                ColorPalette.MONOCHROME -> Color(0xFFE5E5EA).copy(alpha = (1f - stepFactor).toFloat())
-                ColorPalette.RED -> Color(0xFFFFE5E5).copy(alpha = (1f - stepFactor).toFloat())
-                ColorPalette.YELLOW -> Color(0xFFFFF9E5).copy(alpha = (1f - stepFactor).toFloat())
-                ColorPalette.GREEN -> Color(0xFFE5FFE9).copy(alpha = (1f - stepFactor).toFloat())
-                ColorPalette.BLUE -> Color(0xFFE5F1FF).copy(alpha = (1f - stepFactor).toFloat())
-            }
+            primaryColor.copy(alpha = alpha).compositeOver(Color(0xFFF5F5F7))
         }
     }
-    val contentColor = MaterialTheme.colorScheme.onPrimary
+    val contentColor = MaterialTheme.colorScheme.onSurface
+    val dateObj = remember(day.date) {
+        try { LocalDate.parse(day.date) } catch (e: Exception) { null }
+    }
+    val today = remember {
+        Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    }
+    val isPast = dateObj?.let { it < today } ?: false
+
+    val dayName = dateObj?.dayOfWeek?.name ?: day.date
+    val formattedCalendarDate = dateObj?.let {
+        "${it.month.name.take(3)} ${it.dayOfMonth}"
+    } ?: ""
+
     var viewMode by remember { mutableStateOf(DayViewMode.TASKS) }
-    var localNoteText by remember(day.notes) {
+    var localNoteText by remember(day.id) {
         mutableStateOf(day.notes.firstOrNull()?.content ?: "")
     }
+    var isAddingTask by remember { mutableStateOf(false) }
+    var newTaskTitle by remember { mutableStateOf("") }
+
     val animatedHeight by animateDpAsState(
-        targetValue = if (isExpanded) 360.dp else 96.dp,
+        targetValue = if (isExpanded) 360.dp else baseHeight,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = 200f
@@ -114,7 +127,6 @@ fun DaySection(
             .fillMaxWidth()
             .heightIn(min = animatedHeight)
             .background(cardColor)
-            .clickable { onExpandClick() }
     ) {
         Column(
             modifier = Modifier
@@ -122,7 +134,9 @@ fun DaySection(
                 .padding(horizontal = 24.dp, vertical = 20.dp)
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onExpandClick() },
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
@@ -136,19 +150,31 @@ fun DaySection(
                         text = (index + 1).toString(),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        style = getTypography(selectedFont).displaySmall,
+                        style = MaterialTheme.typography.displaySmall,
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 }
                 Spacer(modifier = Modifier.width(16.dp))
-                Text(
-                    text = day.date.uppercase(),
-                    fontSize = 38.sp,
-                    fontWeight = FontWeight.Black,
-                    style = getTypography(selectedFont).displayLargeEmphasized,
-                    color = contentColor,
-                    modifier = Modifier.weight(1f)
-                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = dayName.uppercase(),
+                        fontSize = 38.sp,
+                        fontWeight = FontWeight.Black,
+                        style = getTypography(selectedFont).displayLargeEmphasized,
+                        color = contentColor,
+                    )
+                    AnimatedVisibility(visible = isExpanded) {
+                        if (formattedCalendarDate.isNotEmpty()) {
+                            Text(
+                                text = formattedCalendarDate.uppercase(),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = contentColor.copy(alpha = 0.8f),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
             }
             AnimatedVisibility(
                 visible = isExpanded
@@ -167,40 +193,78 @@ fun DaySection(
                             TaskItem(
                                 task = task,
                                 textColor = contentColor,
-                                onCheckedChange = { isChecked -> onTaskToggled(task.id, isChecked) }
+                                enabled = !isPast,
+                                onCheckedChange = { isChecked ->
+                                    if (!isPast) onTaskToggled(task.id, isChecked)
+                                }
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        if (!isPast) {
+                            Spacer(modifier = Modifier.height(16.dp))
 
-                        Text(
-                            text = "+ Add new Task",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Black,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier
-                                .clickable { onAddTaskClicked("New Task Block") }
-                                .padding(vertical = 4.dp)
-                        )
+                            if (isAddingTask) {
+                                TextField(
+                                    value = newTaskTitle,
+                                    onValueChange = { newTaskTitle = it },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    placeholder = { Text("Enter task title...") },
+                                    colors = TextFieldDefaults.colors(
+                                        focusedContainerColor = Color.Transparent,
+                                        unfocusedContainerColor = Color.Transparent,
+                                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                        unfocusedIndicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                                    ),
+                                    textStyle = MaterialTheme.typography.bodyLarge.copy(color = contentColor),
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(
+                                        imeAction = ImeAction.Done,
+                                        capitalization = KeyboardCapitalization.Sentences
+                                    ),
+                                    keyboardActions = KeyboardActions(
+                                        onDone = {
+                                            if (newTaskTitle.isNotBlank()) {
+                                                onAddTaskClicked(newTaskTitle)
+                                                newTaskTitle = ""
+                                                isAddingTask = false
+                                            }
+                                        }
+                                    )
+                                )
+                            } else {
+                                Text(
+                                    text = "+ Add new Task",
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier
+                                        .clickable { isAddingTask = true }
+                                        .padding(vertical = 4.dp)
+                                )
+                            }
+                        }
                     } else {
                         // Editorial Note View Panel
                         Column(modifier = Modifier.fillMaxWidth()) {
                             TextField(
                                 value = localNoteText,
                                 onValueChange = {
-                                    localNoteText = it
-                                    onSaveNoteClicked(it) // Reactive write streaming directly back down to DB
+                                    if (!isPast) {
+                                        localNoteText = it
+                                        onSaveNoteClicked(it)
+                                    }
                                 },
+                                readOnly = isPast,
                                 placeholder = {
                                     if (localNoteText.isEmpty()) {
                                         Text(
-                                            "Tap to add new Note",
+                                            if (isPast) "No notes for this day" else "Tap to add new Note",
                                             fontSize = 15.sp,
                                             color = contentColor.copy(alpha = 0.3f)
                                         )
                                     }
                                 },
-                                textStyle = getTypography(selectedFont).bodyLarge.copy(
+                                textStyle = MaterialTheme.typography.bodyLarge.copy(
                                     color = contentColor,
                                     fontSize = 16.sp
                                 ),
@@ -230,11 +294,13 @@ fun DaySection(
                     viewMode =
                         if (viewMode == DayViewMode.TASKS) DayViewMode.NOTES else DayViewMode.TASKS
                 },
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier
+                    .padding(16.dp)
+                    .size(48.dp)
             ) {
                 Icon(
                     painter = painterResource(
-                        if (viewMode == DayViewMode.TASKS) {
+                        if (viewMode == DayViewMode.NOTES) {
                             Res.drawable.rounded_event_list_24
                         } else {
                             Res.drawable.rounded_stylus_note_24
@@ -242,7 +308,7 @@ fun DaySection(
                     ),
                     contentDescription = "Switch Mode",
                     tint = contentColor.copy(alpha = 0.6f),
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }

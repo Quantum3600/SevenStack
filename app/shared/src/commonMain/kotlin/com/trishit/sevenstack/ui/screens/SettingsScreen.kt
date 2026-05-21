@@ -1,5 +1,6 @@
 package com.trishit.sevenstack.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -15,9 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ButtonGroup
 import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -27,17 +25,14 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SegmentedListItem
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.ToggleButtonDefaults
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.carousel.CarouselDefaults
 import androidx.compose.material3.carousel.HorizontalMultiBrowseCarousel
 import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.material3.rememberTopAppBarState
@@ -55,13 +50,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import com.trishit.sevenstack.App
-import com.trishit.sevenstack.ui.AppFonts
 import com.trishit.sevenstack.ui.models.AppFont
 import com.trishit.sevenstack.ui.models.AppTheme
 import com.trishit.sevenstack.ui.models.ColorPalette
+import com.trishit.sevenstack.ui.viewmodel.SettingsUiState
 import com.trishit.sevenstack.ui.viewmodel.SettingsViewModel
-import org.jetbrains.compose.resources.DrawableResource
+import androidx.compose.ui.tooling.preview.Preview
+import com.trishit.sevenstack.ui.SevenStackTheme
+import com.trishit.sevenstack.ui.getFontFamily
 import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.viewmodel.koinViewModel
 import sevenstack.app.shared.generated.resources.Res
@@ -69,7 +65,6 @@ import sevenstack.app.shared.generated.resources.back_icon
 import sevenstack.app.shared.generated.resources.outline_mobile_24
 import sevenstack.app.shared.generated.resources.rounded_moon_stars_24
 import sevenstack.app.shared.generated.resources.rounded_wb_sunny_24
-import kotlin.collections.forEachIndexed
 
 class SettingsScreen : Screen {
     @Composable
@@ -79,50 +74,71 @@ class SettingsScreen : Screen {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SettingsContent(
     onBackClick: () -> Unit
 ) {
     val viewModel = koinViewModel<SettingsViewModel>()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    SettingsContent(
+        uiState = uiState,
+        onThemeSelected = viewModel::onThemeSelected,
+        onPaletteSelected = viewModel::onPaletteSelected,
+        onFontSelected = viewModel::onFontSelected,
+        onBackClick = onBackClick
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun SettingsContent(
+    uiState: SettingsUiState,
+    onThemeSelected: (AppTheme) -> Unit,
+    onPaletteSelected: (ColorPalette) -> Unit,
+    onFontSelected: (AppFont) -> Unit,
+    onBackClick: () -> Unit
+) {
     val scrollBehavior =
         TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            LargeTopAppBar(
-                title = {
-                    Text(
-                        text = "Settings",
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = (-1).sp
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            painter = painterResource(Res.drawable.back_icon),
-                            contentDescription = "Back"
+            Box { // Ensuring topBar always has a layout node
+                LargeTopAppBar(
+                    title = {
+                        Text(
+                            text = "Settings",
+                            fontWeight = FontWeight.Black,
+                            fontSize = 48.sp
                         )
-                    }
-                },
-                scrollBehavior = scrollBehavior,
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBackClick) {
+                            Icon(
+                                painter = painterResource(Res.drawable.back_icon),
+                                contentDescription = "Back"
+                            )
+                        }
+                    },
+                    scrollBehavior = scrollBehavior,
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.background,
+                        scrolledContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
                 )
-            )
+            }
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(32.dp)
-        ) {
+        Box(modifier = Modifier.fillMaxSize()) { // Ensuring body always has a layout node
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(horizontal = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(32.dp)
+            ) {
 //            item {
 //                Column {
 //                    Text("ACCOUNT", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
@@ -141,12 +157,12 @@ fun SettingsContent(
             item {
                 Column {
                     Text(
-                        "SYSTEM INTEGRATION",
+                        "Theme",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Black,
                         color = MaterialTheme.colorScheme.primary
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -161,17 +177,15 @@ fun SettingsContent(
                                     else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
                                 },
                                 checked = uiState.theme == theme,
-                                onCheckedChange = { viewModel.onThemeSelected(theme) },
+                                onCheckedChange = { onThemeSelected(theme) },
                             ) {
+                                val themeIcon = when (theme) {
+                                    AppTheme.SYSTEM -> Res.drawable.outline_mobile_24
+                                    AppTheme.DARK -> Res.drawable.rounded_moon_stars_24
+                                    AppTheme.LIGHT -> Res.drawable.rounded_wb_sunny_24
+                                }
                                 Icon(
-                                    painter = painterResource(
-                                        when (theme.name) {
-                                            "SYSTEM" -> Res.drawable.outline_mobile_24
-                                            "DARK" -> Res.drawable.rounded_moon_stars_24
-                                            "LIGHT" -> Res.drawable.rounded_wb_sunny_24
-                                            else -> {}
-                                        } as DrawableResource
-                                    ),
+                                    painter = painterResource(themeIcon),
                                     contentDescription = "Theme Icon"
                                 )
                                 Spacer(Modifier.size(ToggleButtonDefaults.IconSpacing))
@@ -211,14 +225,9 @@ fun SettingsContent(
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .clip(RoundedCornerShape(12.dp))
                                 .background(previewColor)
-                                .border(
-                                    width = if (isSelected) 4.dp else 0.dp,
-                                    color = if (isSelected) MaterialTheme.colorScheme.onBackground else Color.Transparent,
-                                    shape = RoundedCornerShape(12.dp)
-                                )
-                                .clickable { viewModel.onPaletteSelected(currentPalette) }
+
+                                .clickable { onPaletteSelected(currentPalette) }
                                 .padding(12.dp),
                             contentAlignment = Alignment.BottomStart
                         ) {
@@ -243,25 +252,73 @@ fun SettingsContent(
                     Spacer(modifier = Modifier.height(12.dp))
                     val fonts = AppFont.entries
                     Column {
+                        val totalCount = fonts.size
                         fonts.forEachIndexed { index, font ->
-                            val shapes = ListItemDefaults.segmentedShapes(index = index, count = AppFont.entries.count())
+                            val shapes = ListItemDefaults.segmentedShapes(index = index, count = totalCount)
+                            val isSelected = uiState.font == font
                             SegmentedListItem(
-                                selected = uiState.font = font,
-                                onClick = { viewModel.onFontSelected(font) },
+                                selected = isSelected,
+                                colors = ListItemDefaults.segmentedColors(),
+                                onClick = { onFontSelected(font) },
                                 shapes = shapes, // Renders distinct rounded corners for top/middle/bottom
-                                headlineContent = { Text(font.name) },
-                                leadingContent = { RadioButton(selected = uiState.font = font, onClick = null) }
-                            )
+                                leadingContent = { RadioButton(selected = isSelected, onClick = null) }
+                            ) {
+                                Text(
+                                    text = font.name,
+                                    style = MaterialTheme.typography.bodyLarge.copy(
+                                        fontFamily = getFontFamily(font)
+                                    )
+                                )
+                            }
 
                             // Add a small divider between items to emphasize the grouping
-                            if (index < count - 1) {
-                                HorizontalDivider()
+                            if (index < totalCount - 1) {
+                                Spacer(Modifier.height(3.dp))
                             }
                         }
                     }
                 }
             }
+            item {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text("SevenStack", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text("v1.0.0", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            item { Spacer(Modifier.height(8.dp)) }
         }
+    }
+}
+}
+
+@Preview
+@Composable
+fun SettingsContentPreview() {
+    SevenStackTheme {
+        SettingsContent(
+            uiState = SettingsUiState(),
+            onThemeSelected = {},
+            onPaletteSelected = {},
+            onFontSelected = {},
+            onBackClick = {}
+        )
+    }
+}
+
+@Preview
+@Composable
+fun SettingsContentDarkPreview() {
+    SevenStackTheme(appTheme = AppTheme.DARK) {
+        SettingsContent(
+            uiState = SettingsUiState(theme = AppTheme.DARK),
+            onThemeSelected = {},
+            onPaletteSelected = {},
+            onFontSelected = {},
+            onBackClick = {}
+        )
     }
 }
 

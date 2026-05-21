@@ -21,7 +21,7 @@ fun SevenStackTheme(
     }
 
     val colorScheme = AppColors.getColorScheme(colorPalette, isDark)
-    val typography = getTypography(appFont)
+    val typography = getTypography(AppFont.WELLFLEET)
 
     MaterialTheme(
         colorScheme = colorScheme,

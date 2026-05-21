@@ -32,7 +32,7 @@ kotlin {
             // put your Multiplatform dependencies here
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization)
-            implementation(libs.kotlinx.datetime)
+            api(libs.kotlinx.datetime)
             implementation(libs.room.runtime)
             implementation(libs.androidx.sqlite.bundled)
         }

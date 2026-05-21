@@ -180,7 +180,8 @@ fun DaySection1(
 fun TaskItem(
     text: String,
     isInitialChecked: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ) {
     var checked by remember { mutableStateOf(isInitialChecked) }
     val orangeColor = Color(0xFFFF5722)
@@ -193,7 +194,8 @@ fun TaskItem(
     ) {
         CustomCheckbox(
             checked = checked,
-            onCheckedChange = { checked = it }
+            onCheckedChange = { checked = it },
+            enabled = enabled
         )
 
         Spacer(modifier = Modifier.width(12.dp))
@@ -201,7 +203,7 @@ fun TaskItem(
         Text(
             text = text,
             fontSize = 18.sp,
-            color = if (checked) orangeColor else Color(0xFF333333),
+            color = if (checked) orangeColor.copy(alpha = if (enabled) 1f else 0.5f) else Color(0xFF333333).copy(alpha = if (enabled) 1f else 0.5f),
             textDecoration = if (checked) TextDecoration.LineThrough else TextDecoration.None
         )
     }
@@ -211,15 +213,19 @@ fun TaskItem(
 fun CustomCheckbox(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ) {
+    val checkboxColor = if (checked) Color(0xFFFF5722) else Color.Gray
+    val alpha = if (enabled) 1f else 0.5f
+
     Box(
         modifier = modifier
             .size(20.dp)
             .clip(RoundedCornerShape(4.dp))
-            .background(if (checked) Color(0xFFFF5722) else Color.Transparent)
-            .border(2.dp, if (checked) Color(0xFFFF5722) else Color.Gray, RoundedCornerShape(4.dp))
-            .clickable { onCheckedChange(!checked) },
+            .background(if (checked) checkboxColor.copy(alpha = alpha) else Color.Transparent)
+            .border(2.dp, checkboxColor.copy(alpha = alpha), RoundedCornerShape(4.dp))
+            .clickable(enabled = enabled) { onCheckedChange(!checked) },
         contentAlignment = Alignment.Center
     ) {
         if (checked) {

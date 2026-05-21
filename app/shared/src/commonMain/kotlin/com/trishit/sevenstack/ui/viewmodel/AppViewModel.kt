@@ -26,6 +26,9 @@ class AppViewModel(private val repository: AppRepository) : ViewModel() {
     private val _uiState = MutableStateFlow(AppUiState())
     val uiState: StateFlow<AppUiState> = _uiState.asStateFlow()
     init {
+        viewModelScope.launch {
+            repository.initializeDays()
+        }
         repository.observeApp().onEach { fresh ->
             _uiState.update {
                 it.copy(
@@ -64,7 +67,7 @@ class AppViewModel(private val repository: AppRepository) : ViewModel() {
     ) = viewModelScope.launch {
         repository.saveNote(
             NoteDto(
-                id = Random.nextLong().toString(),
+                id = dayId,
                 dayId = dayId,
                 content = content
             )
