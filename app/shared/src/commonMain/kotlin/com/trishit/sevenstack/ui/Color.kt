@@ -1,7 +1,9 @@
 package com.trishit.sevenstack.ui
 
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import com.trishit.sevenstack.ui.models.ColorPalette
 
@@ -127,11 +129,87 @@ object AppColors {
         onSurface = Color(0xFFE2E3DD),
     )
 
-    fun getColorScheme(palette: ColorPalette, isDark: Boolean) = when (palette) {
-        ColorPalette.MONOCHROME -> if (isDark) MonochromeDark else MonochromeLight
-        ColorPalette.RED -> if (isDark) RedDark else RedLight
-        ColorPalette.BLUE -> if (isDark) BlueDark else BlueLight
-        ColorPalette.YELLOW -> if (isDark) YellowDark else YellowLight
-        ColorPalette.GREEN -> if (isDark) GreenDark else GreenLight
+    // Purple
+    val PurpleLight = lightColorScheme(
+        primary = Color(0xFF6750A4),
+        onPrimary = Color.White,
+        secondary = Color(0xFF625B71),
+        onSecondary = Color.White,
+        background = Color(0xFFFFFBFF),
+        surface = Color(0xFFFFFBFF),
+        onBackground = Color(0xFF1C1B1F),
+        onSurface = Color(0xFF1C1B1F),
+    )
+
+    val PurpleDark = darkColorScheme(
+        primary = Color(0xFFD0BCFF),
+        onPrimary = Color(0xFF381E72),
+        secondary = Color(0xFFCCC2DC),
+        onSecondary = Color(0xFF332D41),
+        background = Color(0xFF1C1B1F),
+        surface = Color(0xFF1C1B1F),
+        onBackground = Color(0xFFE6E1E5),
+        onSurface = Color(0xFFE6E1E5),
+    )
+
+    // Orange
+    val OrangeLight = lightColorScheme(
+        primary = Color(0xFF8B5000),
+        onPrimary = Color.White,
+        secondary = Color(0xFF715D49),
+        onSecondary = Color.White,
+        background = Color(0xFFFFFBFF),
+        surface = Color(0xFFFFFBFF),
+        onBackground = Color(0xFF1F1B16),
+        onSurface = Color(0xFF1F1B16),
+    )
+
+    val OrangeDark = darkColorScheme(
+        primary = Color(0xFFFFB870),
+        onPrimary = Color(0xFF4A2800),
+        secondary = Color(0xFFDFBFAF),
+        onSecondary = Color(0xFF3F2E1D),
+        background = Color(0xFF1F1B16),
+        surface = Color(0xFF1F1B16),
+        onBackground = Color(0xFFEAE1D9),
+        onSurface = Color(0xFFEAE1D9),
+    )
+
+    // Pink
+    val PinkLight = lightColorScheme(
+        primary = Color(0xFF984061),
+        onPrimary = Color.White,
+        secondary = Color(0xFF78596B),
+        onSecondary = Color.White,
+        background = Color(0xFFFFFBFF),
+        surface = Color(0xFFFFFBFF),
+        onBackground = Color(0xFF201A1B),
+        onSurface = Color(0xFF201A1B),
+    )
+
+    val PinkDark = darkColorScheme(
+        primary = Color(0xFFFFB1C8),
+        onPrimary = Color(0xFF5E1133),
+        secondary = Color(0xFFE8BDD2),
+        onSecondary = Color(0xFF462939),
+        background = Color(0xFF201A1B),
+        surface = Color(0xFF201A1B),
+        onBackground = Color(0xFFEAE0E1),
+        onSurface = Color(0xFFEAE0E1),
+    )
+
+    @Composable
+    fun getColorScheme(palette: ColorPalette, isDark: Boolean): ColorScheme {
+        return when (palette) {
+            ColorPalette.DYNAMIC -> provideDynamicColorScheme(isDark) ?: (if (isDark) MonochromeDark else MonochromeLight)
+            ColorPalette.MONOCHROME -> if (isDark) MonochromeDark else MonochromeLight
+            ColorPalette.RED -> if (isDark) RedDark else RedLight
+            ColorPalette.BLUE -> if (isDark) BlueDark else BlueLight
+            ColorPalette.YELLOW -> if (isDark) YellowDark else YellowLight
+            ColorPalette.GREEN -> if (isDark) GreenDark else GreenLight
+            ColorPalette.PURPLE -> if (isDark) PurpleDark else PurpleLight
+            ColorPalette.ORANGE -> if (isDark) OrangeDark else OrangeLight
+            ColorPalette.PINK -> if (isDark) PinkDark else PinkLight
+        }
     }
 }

@@ -22,7 +22,7 @@ actual class DatabaseFactory {
         val dbFilePath = documentDirectory.path + "/$DATABASE_NAME"
         return Room.databaseBuilder<SevenStackDatabase>(
             name = dbFilePath,
-            factory = { SevenStackDatabase::class.instantiateImpl() }
+            factory = { SevenStackDatabaseConstructor.initialize() }
         )
     }
 }

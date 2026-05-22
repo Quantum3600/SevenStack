@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -38,10 +40,12 @@ import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -56,13 +60,17 @@ import com.trishit.sevenstack.ui.models.ColorPalette
 import com.trishit.sevenstack.ui.viewmodel.SettingsUiState
 import com.trishit.sevenstack.ui.viewmodel.SettingsViewModel
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.lerp
+import com.trishit.sevenstack.ui.AppColors
 import com.trishit.sevenstack.ui.SevenStackTheme
 import com.trishit.sevenstack.ui.getFontFamily
 import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.viewmodel.koinViewModel
 import sevenstack.app.shared.generated.resources.Res
 import sevenstack.app.shared.generated.resources.back_icon
+import sevenstack.app.shared.generated.resources.gear_svgrepo_com
 import sevenstack.app.shared.generated.resources.outline_mobile_24
+import sevenstack.app.shared.generated.resources.rounded_check_24
 import sevenstack.app.shared.generated.resources.rounded_moon_stars_24
 import sevenstack.app.shared.generated.resources.rounded_wb_sunny_24
 
@@ -99,8 +107,9 @@ fun SettingsContent(
     onFontSelected: (AppFont) -> Unit,
     onBackClick: () -> Unit
 ) {
-    val scrollBehavior =
-        TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
+    val collapsedFraction = scrollBehavior.state.collapsedFraction
+    val titleFontSize = lerp(38.sp, 20.sp, collapsedFraction)
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
@@ -110,7 +119,7 @@ fun SettingsContent(
                         Text(
                             text = "Settings",
                             fontWeight = FontWeight.Black,
-                            fontSize = 48.sp
+                            fontSize = titleFontSize
                         )
                     },
                     navigationIcon = {
@@ -123,22 +132,24 @@ fun SettingsContent(
                     },
                     scrollBehavior = scrollBehavior,
                     colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.background,
-                        scrolledContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                        containerColor = MaterialTheme.colorScheme.surfaceDim,
+                        scrolledContainerColor = MaterialTheme.colorScheme.surfaceDim
                     )
                 )
             }
         },
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = MaterialTheme.colorScheme.surfaceDim
     ) { paddingValues ->
+        val itemTitleStyle = MaterialTheme.typography.titleMedium
         Box(modifier = Modifier.fillMaxSize()) { // Ensuring body always has a layout node
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .padding(horizontal = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(32.dp)
+                    .padding(horizontal = 16.dp, vertical = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(38.dp)
             ) {
+
 //            item {
 //                Column {
 //                    Text("ACCOUNT", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
@@ -158,7 +169,7 @@ fun SettingsContent(
                 Column {
                     Text(
                         "Theme",
-                        style = MaterialTheme.typography.labelLarge,
+                        style = itemTitleStyle,
                         fontWeight = FontWeight.Black,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -166,10 +177,14 @@ fun SettingsContent(
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
+                        horizontalArrangement = Arrangement.spacedBy(
+                            ButtonGroupDefaults.ConnectedSpaceBetween,
+                            Alignment.CenterHorizontally
+                        )
                     ) {
                         AppTheme.entries.forEachIndexed { index, theme ->
                             ToggleButton(
+                                modifier = Modifier.weight(1f).height(56.dp),
                                 shapes = when (index) {
                                     0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
                                     1 -> ButtonGroupDefaults.connectedMiddleButtonShapes()
@@ -197,7 +212,7 @@ fun SettingsContent(
             }
             item {
                 Column {
-                    Text("Palette", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
+                    Text("Palette", style = itemTitleStyle, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.height(12.dp))
 
                     val palettes = ColorPalette.entries
@@ -207,30 +222,50 @@ fun SettingsContent(
                         state = carouselState,
                         preferredItemWidth = 130.dp,
                         itemSpacing = 12.dp,
-                        modifier = Modifier.fillMaxWidth().height(100.dp)
+                        modifier = Modifier.fillMaxWidth().height(140.dp)
                     ) { index ->
                         val currentPalette = palettes[index]
+                        val isSelected = uiState.palette == currentPalette
 
-                        // Map illustrative color boxes for the carousel items
                         val previewColor = when (currentPalette) {
+                            ColorPalette.DYNAMIC -> Color(0xFF007AFF) // Adaptive Blue placeholder
                             ColorPalette.MONOCHROME -> Color.DarkGray
                             ColorPalette.RED -> Color(0xFFFF3B30)
-                            ColorPalette.YELLOW -> Color(0xFFFFCC00)
-                            ColorPalette.GREEN -> Color(0xFF34C759)
                             ColorPalette.BLUE -> Color(0xFF007AFF)
+                            ColorPalette.GREEN -> Color(0xFF34C759)
+                            ColorPalette.YELLOW -> Color(0xFFFFCC00)
+                            ColorPalette.PURPLE -> Color(0xFFAF52DE)
+                            ColorPalette.ORANGE -> Color(0xFFFF9500)
+                            ColorPalette.PINK -> Color(0xFFFF2D55)
                         }
-
-                        val isSelected = uiState.palette == currentPalette
 
                         Box(
                             modifier = Modifier
+                                .maskClip(MaterialTheme.shapes.extraLargeIncreased)
                                 .fillMaxSize()
                                 .background(previewColor)
-
                                 .clickable { onPaletteSelected(currentPalette) }
                                 .padding(12.dp),
                             contentAlignment = Alignment.BottomStart
                         ) {
+                            if (isSelected) {
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.Center)
+                                        .size(32.dp)
+                                        .background(Color.Black.copy(alpha = 0.5f), CircleShape)
+                                        .padding(4.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        painter = painterResource(Res.drawable.rounded_check_24),
+                                        contentDescription = "Selected",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+
                             Text(
                                 text = currentPalette.name,
                                 color = if (currentPalette == ColorPalette.YELLOW) Color.Black else Color.White,
@@ -245,7 +280,7 @@ fun SettingsContent(
                 Column {
                     Text(
                         "Typography",
-                        style = MaterialTheme.typography.labelLarge,
+                        style = itemTitleStyle,
                         fontWeight = FontWeight.Black,
                         color = MaterialTheme.colorScheme.primary
                     )

@@ -105,7 +105,7 @@ fun DaySection(
 
     val dayName = dateObj?.dayOfWeek?.name ?: day.date
     val formattedCalendarDate = dateObj?.let {
-        "${it.month.name.take(3)} ${it.dayOfMonth}"
+        "${it.month.name.take(3)} ${it.day}"
     } ?: ""
 
     var viewMode by remember { mutableStateOf(DayViewMode.TASKS) }
@@ -148,7 +148,6 @@ fun DaySection(
                 ) {
                     Text(
                         text = (index + 1).toString(),
-                        fontSize = 20.sp,
                         fontWeight = FontWeight.ExtraBold,
                         style = MaterialTheme.typography.displaySmall,
                         color = MaterialTheme.colorScheme.onPrimary
@@ -158,7 +157,6 @@ fun DaySection(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = dayName.uppercase(),
-                        fontSize = 38.sp,
                         fontWeight = FontWeight.Black,
                         style = getTypography(selectedFont).displayLargeEmphasized,
                         color = contentColor,

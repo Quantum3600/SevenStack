@@ -63,9 +63,9 @@ jobs:
       - name: Build iOS simulator app
         run: |
           xcodebuild build \
-          -project JetcasterMigration/JetcasterMigration.xcodeproj \
+          -project iosApp/iosApp.xcodeproj \
           -configuration Debug \
-          -scheme JetcasterMigration \
+          -scheme iosApp \
           -sdk iphonesimulator \
           -derivedDataPath ./build \
           -verbose

@@ -54,6 +54,10 @@ abstract class SevenStackDatabase: RoomDatabase() {
     abstract fun appDao(): AppDao
 }
 
+expect object SevenStackDatabaseConstructor : RoomDatabaseConstructor<SevenStackDatabase> {
+    override fun initialize(): SevenStackDatabase
+}
+
 expect class DatabaseFactory {
     fun createBuilder(): RoomDatabase.Builder<SevenStackDatabase>
 }

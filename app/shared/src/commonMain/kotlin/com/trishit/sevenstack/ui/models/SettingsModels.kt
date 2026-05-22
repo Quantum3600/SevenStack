@@ -3,11 +3,15 @@ package com.trishit.sevenstack.ui.models
 enum class AppTheme { SYSTEM, LIGHT, DARK }
 
 enum class ColorPalette {
+    DYNAMIC,
     MONOCHROME,
     RED,
     BLUE,
+    GREEN,
     YELLOW,
-    GREEN
+    PURPLE,
+    ORANGE,
+    PINK
 }
 enum class AppFont {
     SYSTEM,
