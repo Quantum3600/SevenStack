@@ -37,6 +37,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,6 +58,7 @@ import androidx.graphics.shapes.RoundedPolygon
 import com.trishit.sevenstack.DayDto
 import com.trishit.sevenstack.ui.getTypography
 import com.trishit.sevenstack.ui.models.AppFont
+import kotlinx.coroutines.delay
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -104,9 +106,6 @@ fun DaySection(
     val isPast = dateObj?.let { it < today } ?: false
 
     val dayName = dateObj?.dayOfWeek?.name ?: day.date
-    val formattedCalendarDate = dateObj?.let {
-        "${it.month.name.take(3)} ${it.day}"
-    } ?: ""
 
     var viewMode by remember { mutableStateOf(DayViewMode.TASKS) }
     var localNoteText by remember(day.id) {
@@ -114,6 +113,26 @@ fun DaySection(
     }
     var isAddingTask by remember { mutableStateOf(false) }
     var newTaskTitle by remember { mutableStateOf("") }
+
+    var currentTime by remember {
+        mutableStateOf(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()))
+    }
+
+    LaunchedEffect(isExpanded) {
+        if (isExpanded) {
+            while (true) {
+                currentTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+                delay(60000)
+            }
+        }
+    }
+
+    val liveTimeStr = "${currentTime.hour.toString().padStart(2, '0')}:${currentTime.minute.toString().padStart(2, '0')}"
+
+    val formattedCalendarDate = dateObj?.let {
+        val monthName = it.month.name.lowercase().replaceFirstChar { char -> char.uppercase() }
+        "$monthName ${it.day}, ${it.year} - $liveTimeStr"
+    } ?: ""
 
     val animatedHeight by animateDpAsState(
         targetValue = if (isExpanded) 360.dp else baseHeight,
@@ -161,10 +180,11 @@ fun DaySection(
                         style = getTypography(selectedFont).displayLargeEmphasized,
                         color = contentColor,
                     )
+                    Spacer(modifier = Modifier.height(6.dp))
                     AnimatedVisibility(visible = isExpanded) {
                         if (formattedCalendarDate.isNotEmpty()) {
                             Text(
-                                text = formattedCalendarDate.uppercase(),
+                                text = formattedCalendarDate,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = contentColor.copy(alpha = 0.8f),

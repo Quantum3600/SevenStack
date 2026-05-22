@@ -146,7 +146,7 @@ fun SettingsContent(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .padding(horizontal = 16.dp, vertical = 24.dp),
+                    .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(38.dp)
             ) {
 
@@ -220,9 +220,9 @@ fun SettingsContent(
 
                     HorizontalMultiBrowseCarousel(
                         state = carouselState,
-                        preferredItemWidth = 130.dp,
+                        preferredItemWidth = 180.dp,
                         itemSpacing = 12.dp,
-                        modifier = Modifier.fillMaxWidth().height(140.dp)
+                        modifier = Modifier.fillMaxWidth().height(200.dp)
                     ) { index ->
                         val currentPalette = palettes[index]
                         val isSelected = uiState.palette == currentPalette

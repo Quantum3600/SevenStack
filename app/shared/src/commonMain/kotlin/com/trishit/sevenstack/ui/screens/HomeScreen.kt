@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LoadingIndicator
@@ -18,6 +19,7 @@ import androidx.compose.material3.LoadingIndicatorDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
@@ -108,6 +111,9 @@ fun HomeScreenContent(
         mutableStateOf(uiState.days.find { it.date == today }?.id)
     }
 
+    val listState = rememberLazyListState()
+    val density = LocalDensity.current
+
     Surface(
         modifier = modifier.fillMaxSize(),
         color = backgroundColor
@@ -115,6 +121,20 @@ fun HomeScreenContent(
         BoxWithConstraints(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
             val screenHeight = maxHeight
             val baseItemHeight = screenHeight / 7f
+
+            LaunchedEffect(expandedDayId) {
+                if (expandedDayId != null) {
+                    val index = uiState.days.indexOfFirst { it.id == expandedDayId }
+                    if (index != -1) {
+                        val targetOffsetPx = with(density) {
+                            val itemHeightPx = 360.dp.toPx()
+                            val viewportHeightPx = screenHeight.toPx()
+                            ((viewportHeightPx - itemHeightPx) / 2).toInt().coerceAtLeast(0)
+                        }
+                        listState.animateScrollToItem(index, -targetOffsetPx)
+                    }
+                }
+            }
 
             if (uiState.isLoading) {
                 LoadingIndicator(
@@ -124,6 +144,7 @@ fun HomeScreenContent(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
+                    state = listState,
                     contentPadding = PaddingValues(bottom = 0.dp),
                     userScrollEnabled = true
                 ) {

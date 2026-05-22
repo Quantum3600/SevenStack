@@ -31,16 +31,17 @@ fun getFontFamily(appFont: AppFont): FontFamily {
 
 private fun getFontScale(font: AppFont): Float {
     return when (font) {
-        AppFont.CLIMATE_CRISIS -> 0.65f
-        AppFont.OI -> 0.7f
-        AppFont.SARINA -> 0.8f
-        AppFont.BITCOUNT -> 1.25f
-        AppFont.DYNAPUFF -> 1.2f
+        AppFont.CLIMATE_CRISIS -> 0.50f
+        AppFont.OI -> 0.5f
+        AppFont.SARINA -> 0.6f
+        AppFont.BITCOUNT -> 1.1f
+        AppFont.DYNAPUFF -> 1.1f
         AppFont.VINA_SANS -> 1.25f
         AppFont.WORKBENCH -> 1.15f
-        AppFont.PRESS_START -> 0.75f
+        AppFont.PRESS_START -> 0.55f
         AppFont.BUNGEE -> 0.9f
-        else -> 1.0f
+        AppFont.ZEN_DOTS -> 0.5f
+        else -> 0.8f
     }
 }
 
