@@ -24,7 +24,7 @@ jobs:
         uses: ./.github/actions/gradle-setup
 
       - name: Build Android debug APK
-        run: ./gradlew :mobile:assembleDebug
+        run: ./gradlew :app:androidApp:assembleDebug
 
       - name: Upload Android debug APK
         uses: actions/upload-artifact@v4
