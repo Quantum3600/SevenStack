@@ -1,36 +1,65 @@
 package com.trishit.sevenstack.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.pager.VerticalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.LoadingIndicatorDefaults
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
+import kotlinx.datetime.isoDayNumber
+import kotlinx.datetime.DayOfWeek
+import sevenstack.app.shared.generated.resources.rounded_event_list_24
+import sevenstack.app.shared.generated.resources.back_icon
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -68,6 +97,7 @@ class HomeScreen : Screen {
         HomeScreenContent(
             uiState = uiState,
             settingsState = settingsState,
+            onLoadWeek = { viewModel.loadWeek(it) },
             onTaskToggled = { taskId, isCompleted ->
                 viewModel.onTaskToggled(taskId, isCompleted)
             },
@@ -86,6 +116,7 @@ class HomeScreen : Screen {
 fun HomeScreenContent(
     uiState: AppUiState,
     settingsState: SettingsUiState,
+    onLoadWeek: (Int) -> Unit,
     onTaskToggled: (String, Boolean) -> Unit,
     onAddTask: (String, String) -> Unit,
     onSaveNote: (String, String) -> Unit,
@@ -105,14 +136,22 @@ fun HomeScreenContent(
     }
 
     val today = remember {
-        Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+        Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     }
-    var expandedDayId by remember(uiState.days) {
-        mutableStateOf(uiState.days.find { it.date == today }?.id)
+    
+    val initialPage = 500
+    val pagerState = rememberPagerState(initialPage = initialPage) { 1000 }
+    val scope = rememberCoroutineScope()
+    
+    val currentOffset = pagerState.currentPage - initialPage
+
+    LaunchedEffect(pagerState.currentPage) {
+        onLoadWeek(currentOffset)
+        onLoadWeek(currentOffset - 1)
+        onLoadWeek(currentOffset + 1)
     }
 
-    val listState = rememberLazyListState()
-    val density = LocalDensity.current
+    // Manage individual expansion states per week to avoid weird jumping
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -122,57 +161,132 @@ fun HomeScreenContent(
             val screenHeight = maxHeight
             val baseItemHeight = screenHeight / 7f
 
-            LaunchedEffect(expandedDayId) {
-                if (expandedDayId != null) {
-                    val index = uiState.days.indexOfFirst { it.id == expandedDayId }
-                    if (index != -1) {
-                        val targetOffsetPx = with(density) {
-                            val itemHeightPx = 360.dp.toPx()
-                            val viewportHeightPx = screenHeight.toPx()
-                            ((viewportHeightPx - itemHeightPx) / 2).toInt().coerceAtLeast(0)
+            VerticalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize(),
+                userScrollEnabled = true
+            ) { page ->
+                val offset = page - initialPage
+                val weekDays = uiState.weeks[offset] ?: emptyList()
+                val listState = rememberLazyListState()
+                val density = LocalDensity.current
+                
+                var expandedId by remember { 
+                    mutableStateOf(if (offset == 0) today.toString() else null)
+                }
+
+                LaunchedEffect(expandedId) {
+                    if (expandedId != null) {
+                        val index = weekDays.indexOfFirst { it.date == expandedId }
+                        if (index != -1) {
+                            val targetOffsetPx = with(density) {
+                                val itemHeightPx = 360.dp.toPx()
+                                val viewportHeightPx = screenHeight.toPx()
+                                ((viewportHeightPx - itemHeightPx) / 2).toInt().coerceAtLeast(0)
+                            }
+                            listState.animateScrollToItem(index, -targetOffsetPx)
                         }
-                        listState.animateScrollToItem(index, -targetOffsetPx)
+                    }
+                }
+
+                if (weekDays.isEmpty() && uiState.isLoading) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        LoadingIndicator(
+                            polygons = LoadingIndicatorDefaults.IndeterminateIndicatorPolygons
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        state = listState,
+                        userScrollEnabled = true
+                    ) {
+                        itemsIndexed(weekDays, key = { _, day -> day.id }) { idx, day ->
+                            DaySection(
+                                day = day,
+                                index = idx,
+                                isExpanded = expandedId == day.date,
+                                isDark = isDark,
+                                selectedFont = settingsState.font,
+                                baseHeight = baseItemHeight,
+                                onExpandClick = {
+                                    expandedId = if (expandedId == day.date) null else day.date
+                                },
+                                onTaskToggled = onTaskToggled,
+                                onAddTaskClicked = { title -> onAddTask(day.id, title) },
+                                onSaveNoteClicked = { rawText -> onSaveNote(day.id, rawText) }
+                            )
+                        }
                     }
                 }
             }
 
-            if (uiState.isLoading) {
-                LoadingIndicator(
-                    modifier = Modifier.align(Alignment.Center),
-                    polygons = LoadingIndicatorDefaults.IndeterminateIndicatorPolygons
-                )
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    state = listState,
-                    contentPadding = PaddingValues(bottom = 0.dp),
-                    userScrollEnabled = true
+            // Overlay for Month, Year, Week Number
+            val showOverlay by remember { derivedStateOf { pagerState.isScrollInProgress } }
+            val overlayInfo = remember(pagerState.currentPage) {
+                val offset = pagerState.currentPage - initialPage
+                val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+                val monday = now.minus(now.dayOfWeek.ordinal, DateTimeUnit.DAY).plus(offset * 7, DateTimeUnit.DAY)
+                
+                val monthName = monday.month.name.lowercase().replaceFirstChar { it.uppercase() }
+                val year = monday.year
+                val weekNum = (monday.dayOfYear - 1) / 7 + 1
+                
+                "$monthName $year, Week $weekNum"
+            }
+
+            AnimatedVisibility(
+                visible = showOverlay,
+                enter = fadeIn(),
+                exit = fadeOut(),
+                modifier = Modifier.align(Alignment.Center)
+            ) {
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f),
+                    shape = RoundedCornerShape(24.dp),
+                    tonalElevation = 8.dp
                 ) {
-                    itemsIndexed(uiState.days, key = { _, day -> day.id }) { idx, day ->
-                        DaySection(
-                            day = day,
-                            index = idx,
-                            isExpanded = expandedDayId == day.id,
-                            isDark = isDark,
-                            selectedFont = settingsState.font,
-                            baseHeight = baseItemHeight,
-                            onExpandClick = {
-                                expandedDayId = if (expandedDayId == day.id) null else day.id
-                            },
-                            onTaskToggled = onTaskToggled,
-                            onAddTaskClicked = { title -> onAddTask(day.id, title) },
-                            onSaveNoteClicked = { rawText -> onSaveNote(day.id, rawText) }
-                        )
-                    }
+                    Text(
+                        text = overlayInfo,
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
+
+            // Back to Today FAB
+            AnimatedVisibility(
+                visible = currentOffset != 0,
+                enter = fadeIn(),
+                exit = fadeOut(),
+                modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = 80.dp, end = 16.dp)
+            ) {
+                FloatingActionButton(
+                    onClick = {
+                        scope.launch {
+                            pagerState.animateScrollToPage(initialPage)
+                        }
+                    },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    shape = MaterialShapes.Pill.toShape()
+                ) {
+                    Icon(
+                        painter = painterResource(Res.drawable.back_icon),
+                        contentDescription = "Back to Today",
+                        modifier = Modifier.size(24.dp).rotate(270f)
+                    )
+                }
+            }
+
             IconButton(
                 onClick = onSettingsClick,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 16.dp)
                     .size(40.dp)
-                    .background(Color.Transparent)
             ) {
                 Icon(
                     painter = painterResource(Res.drawable.gear_svgrepo_com),
@@ -211,7 +325,7 @@ fun HomeScreenPreview() {
         )
     )
 
-    val uiState = AppUiState(days = fakeDays, isLoading = false)
+    val uiState = AppUiState(weeks = mapOf(0 to fakeDays), isLoading = false)
     val settingsState = SettingsUiState(
         theme = AppTheme.LIGHT,
         palette = ColorPalette.MONOCHROME,
@@ -226,6 +340,7 @@ fun HomeScreenPreview() {
         HomeScreenContent(
             uiState = uiState,
             settingsState = settingsState,
+            onLoadWeek = {},
             onTaskToggled = { _, _ -> },
             onAddTask = { _, _ -> },
             onSaveNote = { _, _ -> },

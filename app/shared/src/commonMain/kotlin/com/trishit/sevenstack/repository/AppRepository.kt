@@ -20,31 +20,44 @@ import kotlin.time.Clock
 
 class AppRepository(private val dao: AppDao) {
     suspend fun initializeDays() {
-        val existing = dao.observeAllDays().firstOrNull() ?: emptyList()
-        // If the database has old string dates (like "Monday"), clear it once to fix.
-        if (existing.isNotEmpty() && existing.any { !it.days.date.contains("-") }) {
+        // Clear old format days if any (IDs "0".."6")
+        val allDays = dao.getDaysInRange("0000-01-01", "9999-12-31")
+        if (allDays.any { it.days.id.length < 5 }) {
             dao.deleteAllDays()
         }
-
-        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
-        val offset = now.dayOfWeek.ordinal // Monday is 0, Sunday is 6
-        val monday = now.minus(offset, DateTimeUnit.DAY)
-
-        val days = (0..6).map { i ->
-            monday.plus(i, DateTimeUnit.DAY)
-        }
-
-        dao.insertDays(days.mapIndexed { index, date ->
-            DayEntity(
-                id = index.toString(),
-                userId = "default",
-                date = date.toString()
-            )
-        })
+        ensureWeekExists(0)
     }
 
-    fun observeApp(): Flow<List<DayDto>> = dao.observeAllDays().map { list ->
-        list.map { it.toDomainDto() }
+    suspend fun ensureWeekExists(weekOffset: Int) {
+        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val currentWeekMonday = now.minus(now.dayOfWeek.ordinal, DateTimeUnit.DAY)
+        val targetMonday = currentWeekMonday.plus(weekOffset * 7, DateTimeUnit.DAY)
+        val targetSunday = targetMonday.plus(6, DateTimeUnit.DAY)
+
+        val existing = dao.getDaysInRange(targetMonday.toString(), targetSunday.toString())
+        
+        if (existing.size < 7) {
+            val daysToInsert = (0..6).map { i ->
+                val date = targetMonday.plus(i, DateTimeUnit.DAY)
+                DayEntity(
+                    id = date.toString(),
+                    userId = "default",
+                    date = date.toString()
+                )
+            }
+            dao.insertDays(daysToInsert)
+        }
+    }
+
+    fun observeWeek(weekOffset: Int): Flow<List<DayDto>> {
+        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val currentWeekMonday = now.minus(now.dayOfWeek.ordinal, DateTimeUnit.DAY)
+        val targetMonday = currentWeekMonday.plus(weekOffset * 7, DateTimeUnit.DAY)
+        val targetSunday = targetMonday.plus(6, DateTimeUnit.DAY)
+
+        return dao.observeDaysInRange(targetMonday.toString(), targetSunday.toString()).map { list ->
+            list.map { it.toDomainDto() }
+        }
     }
     suspend fun toggleTaskCompletion(
         taskId: String,

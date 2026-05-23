@@ -18,26 +18,40 @@ import kotlinx.coroutines.launch
 import kotlin.random.Random
 
 data class AppUiState(
-    val days: List<DayDto> = emptyList(),
+    val weeks: Map<Int, List<DayDto>> = emptyMap(),
     val isLoading: Boolean = true
 )
 
 class AppViewModel(private val repository: AppRepository) : ViewModel() {
     private val _uiState = MutableStateFlow(AppUiState())
     val uiState: StateFlow<AppUiState> = _uiState.asStateFlow()
+    
+    private val activeJobs = mutableMapOf<Int, kotlinx.coroutines.Job>()
+
     init {
         viewModelScope.launch {
             repository.initializeDays()
+            loadWeek(0)
         }
-        repository.observeApp().onEach { fresh ->
-            _uiState.update {
-                it.copy(
-                    days = fresh,
-                    isLoading = false
-                )
+    }
+
+    fun loadWeek(offset: Int) {
+        if (activeJobs.containsKey(offset)) return
+
+        activeJobs[offset] = repository.observeWeek(offset)
+            .onEach { fresh ->
+                _uiState.update {
+                    it.copy(
+                        weeks = it.weeks + (offset to fresh),
+                        isLoading = false
+                    )
+                }
             }
-        }
             .launchIn(viewModelScope)
+        
+        viewModelScope.launch {
+            repository.ensureWeekExists(offset)
+        }
     }
     fun onTaskToggled(
         taskId: String,

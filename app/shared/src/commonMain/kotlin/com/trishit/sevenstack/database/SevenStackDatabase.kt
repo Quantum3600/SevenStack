@@ -23,8 +23,12 @@ interface AppDao {
     suspend fun deleteAllDays()
 
     @Transaction
-    @Query("SELECT * FROM days ORDER BY id ASC")
-    fun observeAllDays(): Flow<List<DayWithContent>>
+    @Query("SELECT * FROM days WHERE date BETWEEN :start AND :end ORDER BY date ASC")
+    fun observeDaysInRange(start: String, end: String): Flow<List<DayWithContent>>
+
+    @Transaction
+    @Query("SELECT * FROM days WHERE date BETWEEN :start AND :end ORDER BY date ASC")
+    suspend fun getDaysInRange(start: String, end: String): List<DayWithContent>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTask(task: TaskEntity)
