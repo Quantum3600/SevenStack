@@ -1,10 +1,7 @@
 package com.trishit.sevenstack.ui
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.input.key.Key.Companion.R
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontVariation
-import com.trishit.sevenstack.ui.models.AppFont
 import org.jetbrains.compose.resources.Font
 import sevenstack.app.shared.generated.resources.Res
 import sevenstack.app.shared.generated.resources.bitcount_var

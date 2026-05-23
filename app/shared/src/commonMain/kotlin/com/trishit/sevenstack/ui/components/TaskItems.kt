@@ -17,7 +17,6 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.trishit.sevenstack.TaskDto
-import com.trishit.sevenstack.ui.screens.CustomCheckbox
 
 @Composable
 fun TaskItem(
@@ -40,7 +39,6 @@ fun TaskItem(
         CustomCheckbox(
             checked = task.isCompleted,
             onCheckedChange = onCheckedChange,
-            enabled = enabled
         )
 
         Spacer(modifier = Modifier.width(14.dp))

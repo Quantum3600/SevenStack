@@ -9,7 +9,6 @@ import com.trishit.sevenstack.database.DayWithContent
 import com.trishit.sevenstack.database.NoteEntity
 import com.trishit.sevenstack.database.TaskEntity
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone

@@ -3,7 +3,6 @@ package com.trishit.sevenstack.database
 import androidx.room.ConstructedBy
 import androidx.room.Dao
 import androidx.room.Database
-import androidx.room.Entity
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
