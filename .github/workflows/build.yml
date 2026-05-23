@@ -63,7 +63,7 @@ jobs:
       - name: Build iOS simulator app
         run: |
           xcodebuild build \
-          -project iosApp/iosApp.xcodeproj \
+          -project app/iosApp/iosApp.xcodeproj \
           -configuration Debug \
           -scheme iosApp \
           -sdk iphonesimulator \
