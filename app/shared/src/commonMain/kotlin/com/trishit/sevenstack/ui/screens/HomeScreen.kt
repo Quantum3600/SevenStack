@@ -17,7 +17,8 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.pager.VerticalPager
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -138,11 +139,11 @@ fun HomeScreenContent(
     val today = remember {
         Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     }
-    
+
     val initialPage = 500
     val pagerState = rememberPagerState(initialPage = initialPage) { 1000 }
     val scope = rememberCoroutineScope()
-    
+
     val currentOffset = pagerState.currentPage - initialPage
 
     LaunchedEffect(pagerState.currentPage) {
@@ -161,7 +162,7 @@ fun HomeScreenContent(
             val screenHeight = maxHeight
             val baseItemHeight = screenHeight / 7f
 
-            VerticalPager(
+            HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.fillMaxSize(),
                 userScrollEnabled = true
@@ -170,8 +171,8 @@ fun HomeScreenContent(
                 val weekDays = uiState.weeks[offset] ?: emptyList()
                 val listState = rememberLazyListState()
                 val density = LocalDensity.current
-                
-                var expandedId by remember { 
+
+                var expandedId by remember {
                     mutableStateOf(if (offset == 0) today.toString() else null)
                 }
 
@@ -226,12 +227,13 @@ fun HomeScreenContent(
             val overlayInfo = remember(pagerState.currentPage) {
                 val offset = pagerState.currentPage - initialPage
                 val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
-                val monday = now.minus(now.dayOfWeek.ordinal, DateTimeUnit.DAY).plus(offset * 7, DateTimeUnit.DAY)
-                
+                val monday = now.minus(now.dayOfWeek.ordinal, DateTimeUnit.DAY)
+                    .plus(offset * 7, DateTimeUnit.DAY)
+
                 val monthName = monday.month.name.lowercase().replaceFirstChar { it.uppercase() }
                 val year = monday.year
                 val weekNum = (monday.dayOfYear - 1) / 7 + 1
-                
+
                 "$monthName $year, Week $weekNum"
             }
 
@@ -249,7 +251,7 @@ fun HomeScreenContent(
                     Text(
                         text = overlayInfo,
                         modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.headlineLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -273,10 +275,11 @@ fun HomeScreenContent(
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                     shape = MaterialShapes.Pill.toShape()
                 ) {
+                    val rotation = if (currentOffset < 0) 180f else 0f
                     Icon(
                         painter = painterResource(Res.drawable.back_icon),
                         contentDescription = "Back to Today",
-                        modifier = Modifier.size(24.dp).rotate(270f)
+                        modifier = Modifier.size(24.dp).rotate(rotation)
                     )
                 }
             }
