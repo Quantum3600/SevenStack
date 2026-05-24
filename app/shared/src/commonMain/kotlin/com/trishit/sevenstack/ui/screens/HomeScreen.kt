@@ -92,8 +92,14 @@ class HomeScreen : Screen {
             onAddTask = { dayId, title ->
                 viewModel.onAddTask(dayId, title)
             },
-            onSaveNote = { dayId, rawText ->
-                viewModel.onSaveNote(dayId, rawText)
+            onDeleteTask = { taskId ->
+                viewModel.onDeleteTask(taskId)
+            },
+            onSaveNote = { dayId, rawText, noteId ->
+                viewModel.onSaveNote(dayId, rawText, noteId)
+            },
+            onDeleteNote = { noteId ->
+                viewModel.onDeleteNote(noteId)
             },
             onSettingsClick = { navigator.push(SettingsScreen()) }
         )
@@ -107,9 +113,11 @@ fun HomeScreenContent(
     onLoadWeek: (Int) -> Unit,
     onTaskToggled: (String, Boolean) -> Unit,
     onAddTask: (String, String) -> Unit,
-    onSaveNote: (String, String) -> Unit,
+    onDeleteTask: (String) -> Unit,
+    onSaveNote: (String, String, String?) -> Unit,
+    onDeleteNote: (String) -> Unit,
     onSettingsClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val isDark = when (settingsState.theme) {
         AppTheme.SYSTEM -> isSystemInDarkTheme()
@@ -202,7 +210,9 @@ fun HomeScreenContent(
                                 },
                                 onTaskToggled = onTaskToggled,
                                 onAddTaskClicked = { title -> onAddTask(day.id, title) },
-                                onSaveNoteClicked = { rawText -> onSaveNote(day.id, rawText) }
+                                onDeleteTaskClicked = onDeleteTask,
+                                onSaveNoteClicked = onSaveNote,
+                                onDeleteNoteClicked = onDeleteNote
                             )
                         }
                     }
@@ -298,8 +308,8 @@ fun HomeScreenPreview() {
             userId = "user1",
             date = "2023-10-27",
             tasks = listOf(
-                TaskDto("1", "1", "Finish the project", true),
-                TaskDto("2", "1", "Write documentation", false)
+                TaskDto("1", "1", "Finish the project", isCompleted = true),
+                TaskDto("2", "1", "Write documentation", isCompleted = false)
             ),
             notes = listOf(
                 NoteDto("1", "1", "Need to call the client")
@@ -310,7 +320,7 @@ fun HomeScreenPreview() {
             userId = "user1",
             date = "2023-10-28",
             tasks = listOf(
-                TaskDto("3", "2", "Buy groceries", false)
+                TaskDto("3", "2", "Buy groceries", isCompleted = false)
             )
         )
     )
@@ -333,7 +343,9 @@ fun HomeScreenPreview() {
             onLoadWeek = {},
             onTaskToggled = { _, _ -> },
             onAddTask = { _, _ -> },
-            onSaveNote = { _, _ -> },
+            onDeleteTask = {},
+            onSaveNote = { _, _, _ -> },
+            onDeleteNote = {},
             onSettingsClick = {}
         )
     }

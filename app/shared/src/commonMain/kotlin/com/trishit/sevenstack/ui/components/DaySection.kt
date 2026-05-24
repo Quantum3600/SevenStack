@@ -52,6 +52,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.painterResource
 import sevenstack.app.shared.generated.resources.Res
+import sevenstack.app.shared.generated.resources.gear_svgrepo_com
 import sevenstack.app.shared.generated.resources.rounded_event_list_24
 import sevenstack.app.shared.generated.resources.rounded_stylus_note_24
 import kotlin.time.Clock
@@ -69,7 +70,9 @@ fun DaySection(
     onExpandClick: () -> Unit,
     onTaskToggled: (String, Boolean) -> Unit,
     onAddTaskClicked: (String) -> Unit,
-    onSaveNoteClicked: (String) -> Unit
+    onDeleteTaskClicked: (String) -> Unit,
+    onSaveNoteClicked: (String, String, String?) -> Unit,
+    onDeleteNoteClicked: (String) -> Unit,
 ) {
     val primaryColor = MaterialTheme.colorScheme.primary
     val cardColor = remember(
@@ -96,9 +99,6 @@ fun DaySection(
     val dayName = dateObj?.dayOfWeek?.name ?: day.date
 
     var viewMode by remember { mutableStateOf(DayViewMode.TASKS) }
-    var localNoteText by remember(day.id) {
-        mutableStateOf(day.notes.firstOrNull()?.content ?: "")
-    }
     var isAddingTask by remember { mutableStateOf(false) }
     var newTaskTitle by remember { mutableStateOf("") }
 
@@ -202,7 +202,8 @@ fun DaySection(
                                 enabled = !isPast,
                                 onCheckedChange = { isChecked ->
                                     if (!isPast) onTaskToggled(task.id, isChecked)
-                                }
+                                },
+                                onDelete = { onDeleteTaskClicked(task.id) }
                             )
                         }
 
@@ -252,40 +253,67 @@ fun DaySection(
                     } else {
                         // Editorial Note View Panel
                         Column(modifier = Modifier.fillMaxWidth()) {
-                            TextField(
-                                value = localNoteText,
-                                onValueChange = {
-                                    if (!isPast) {
-                                        localNoteText = it
-                                        onSaveNoteClicked(it)
-                                    }
-                                },
-                                readOnly = isPast,
-                                placeholder = {
-                                    if (localNoteText.isEmpty()) {
-                                        Text(
-                                            if (isPast) "No notes for this day" else "Tap to add new Note",
-                                            fontSize = 15.sp,
-                                            color = contentColor.copy(alpha = 0.3f)
+                            day.notes.forEach { note ->
+                                Row(
+                                    verticalAlignment = Alignment.Top,
+                                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                                ) {
+                                    TextField(
+                                        value = note.content,
+                                        onValueChange = {
+                                            if (!isPast) {
+                                                onSaveNoteClicked(day.id, it, note.id)
+                                            }
+                                        },
+                                        readOnly = isPast,
+                                        placeholder = {
+                                            Text(
+                                                "Write your thoughts here...",
+                                                fontSize = 15.sp,
+                                                color = contentColor.copy(alpha = 0.3f)
+                                            )
+                                        },
+                                        textStyle = MaterialTheme.typography.bodyLarge.copy(
+                                            color = contentColor,
+                                            fontSize = 16.sp
+                                        ),
+                                        modifier = Modifier.weight(1f),
+                                        colors = TextFieldDefaults.colors(
+                                            focusedContainerColor = Color.Transparent,
+                                            unfocusedContainerColor = Color.Transparent,
+                                            errorContainerColor = Color.Transparent,
+                                            disabledContainerColor = Color.Transparent,
+                                            focusedIndicatorColor = Color.Transparent,
+                                            unfocusedIndicatorColor = Color.Transparent
                                         )
+                                    )
+                                    if (!isPast) {
+                                        IconButton(
+                                            onClick = { onDeleteNoteClicked(note.id) },
+                                            modifier = Modifier.size(24.dp).padding(top = 8.dp)
+                                        ) {
+                                            Icon(
+                                                painter = painterResource(Res.drawable.gear_svgrepo_com),
+                                                contentDescription = "Delete Note",
+                                                tint = contentColor.copy(alpha = 0.3f),
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
                                     }
-                                },
-                                textStyle = MaterialTheme.typography.bodyLarge.copy(
-                                    color = contentColor,
-                                    fontSize = 16.sp
-                                ),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .heightIn(min = 120.dp),
-                                colors = TextFieldDefaults.colors(
-                                    focusedContainerColor = Color.Transparent,
-                                    unfocusedContainerColor = Color.Transparent,
-                                    errorContainerColor = Color.Transparent,
-                                    disabledContainerColor = Color.Transparent,
-                                    focusedIndicatorColor = Color.Transparent,
-                                    unfocusedIndicatorColor = Color.Transparent
+                                }
+                            }
+                            
+                            if (!isPast) {
+                                Text(
+                                    text = if (day.notes.isEmpty()) "+ Write your thoughts here..." else "+ Add more thoughts",
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier
+                                        .clickable { onSaveNoteClicked(day.id, "", null) }
+                                        .padding(vertical = 8.dp)
                                 )
-                            )
+                            }
                         }
                     }
                 }

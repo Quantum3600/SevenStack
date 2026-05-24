@@ -1,6 +1,5 @@
 package com.trishit.sevenstack.ui.viewmodel
 
-import androidx.compose.runtime.MutableState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.trishit.sevenstack.DayDto
@@ -11,7 +10,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.observeOn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -19,7 +17,7 @@ import kotlin.random.Random
 
 data class AppUiState(
     val weeks: Map<Int, List<DayDto>> = emptyMap(),
-    val isLoading: Boolean = true
+    val isLoading: Boolean = true,
 )
 
 class AppViewModel(private val repository: AppRepository) : ViewModel() {
@@ -77,11 +75,12 @@ class AppViewModel(private val repository: AppRepository) : ViewModel() {
     }
     fun onSaveNote(
         dayId: String,
-        content: String
+        content: String,
+        noteId: String? = null
     ) = viewModelScope.launch {
         repository.saveNote(
             NoteDto(
-                id = dayId,
+                id = noteId ?: Random.nextLong().toString(),
                 dayId = dayId,
                 content = content
             )

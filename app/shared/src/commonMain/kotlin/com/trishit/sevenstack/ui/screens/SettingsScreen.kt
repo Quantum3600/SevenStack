@@ -22,6 +22,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedListItem
@@ -32,6 +33,9 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.carousel.HorizontalMultiBrowseCarousel
 import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.material3.rememberTopAppBarState
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -52,6 +56,7 @@ import com.trishit.sevenstack.ui.getFontFamily
 import com.trishit.sevenstack.ui.models.AppFont
 import com.trishit.sevenstack.ui.models.AppTheme
 import com.trishit.sevenstack.ui.models.ColorPalette
+import com.trishit.sevenstack.ui.viewmodel.AuthState
 import com.trishit.sevenstack.ui.viewmodel.SettingsUiState
 import com.trishit.sevenstack.ui.viewmodel.SettingsViewModel
 import org.jetbrains.compose.resources.painterResource
@@ -83,6 +88,8 @@ fun SettingsContent(
         onThemeSelected = viewModel::onThemeSelected,
         onPaletteSelected = viewModel::onPaletteSelected,
         onFontSelected = viewModel::onFontSelected,
+        onSignInClick = viewModel::triggerGoogleIdentityVerification,
+        onSignOutClick = viewModel::handleLogOut,
         onBackClick = onBackClick
     )
 }
@@ -94,6 +101,8 @@ fun SettingsContent(
     onThemeSelected: (AppTheme) -> Unit,
     onPaletteSelected: (ColorPalette) -> Unit,
     onFontSelected: (AppFont) -> Unit,
+    onSignInClick: () -> Unit,
+    onSignOutClick: () -> Unit,
     onBackClick: () -> Unit
 ) {
     val scrollBehavior =
@@ -139,22 +148,49 @@ fun SettingsContent(
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(38.dp)
             ) {
-
-//            item {
-//                Column {
-//                    Text("ACCOUNT", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
-//                    Spacer(modifier = Modifier.height(12.dp))
-//                    OutlinedCard(
-//                        modifier = Modifier.fillMaxWidth(),
-//                        shape = RoundedCornerShape(8.dp)
-//                    ) {
-//                        Column(modifier = Modifier.padding(16.dp)) {
-//                            Text("Offline Mode Active", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-//                            Text("Cloud synchronization and backup strategies are managed in Phase 2.", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-//                        }
-//                    }
-//                }
-//            }
+                item {
+                    Column {
+                        Text("ACCOUNT", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        OutlinedCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                when (val authState = uiState.authState) {
+                                    is AuthState.Authenticated -> {
+                                        Text("Logged in as ${authState.user.username}", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                        Text(authState.user.email, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        Button(
+                                            onClick = onSignOutClick,
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = RoundedCornerShape(4.dp),
+                                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                                        ) {
+                                            Text("SIGN OUT")
+                                        }
+                                    }
+                                    is AuthState.Loading -> {
+                                        Text("Processing...")
+                                    }
+                                    else -> {
+                                        Text("Not Signed In", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                        Text("Sign in to sync your tasks across devices.", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        Button(
+                                            onClick = onSignInClick,
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = RoundedCornerShape(4.dp)
+                                        ) {
+                                            Text("SIGN IN WITH GOOGLE")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
                 item {
                     Column {
                         Text(
@@ -345,6 +381,8 @@ fun SettingsContentPreview() {
             onThemeSelected = {},
             onPaletteSelected = {},
             onFontSelected = {},
+            onSignInClick = {},
+            onSignOutClick = {},
             onBackClick = {}
         )
     }
@@ -359,6 +397,8 @@ fun SettingsContentDarkPreview() {
             onThemeSelected = {},
             onPaletteSelected = {},
             onFontSelected = {},
+            onSignInClick = {},
+            onSignOutClick = {},
             onBackClick = {}
         )
     }
